@@ -1,0 +1,109 @@
+---
+title: "Poverty Statistics Analysis using the World Bank API"
+format: html
+---
+
+## Introduction
+
+Poverty is a significant issue affecting millions worldwide, influencing multiple aspects of society, including health, education, and economic productivity. To better understand and address these challenges, I selected the World Bank's webpage and API for the indicator **Poverty headcount ratio at \$2.15 a day (2017 PPP) (% of population)** as the primary data source. This document outlines the rationale for this selection, the relevance of this data to social sciences, the decision to use API-based web scraping, and insights derived from the analysis of the data. Finally, this report also evaluates the use of ChatGPT in this work.
+
+## Rationale
+
+The World Bank is one of the most reputable global organizations providing high-quality, standardized socioeconomic data. This metric is critical for understanding:
+
+-   **Global Inequality**: Poverty rates reveal disparities within and across countries.
+
+-   **Policy Impact**: Data helps policymakers evaluate the effectiveness of poverty alleviation programs.
+
+-   **Interdisciplinary Research**: Poverty intersects with social sciences topics such as education, public health, and urban planning.
+
+The decision to use the World Bank API instead of traditional web scraping was driven by the following factors:
+
+1.  **Structured Data**: APIs return well-structured data in JSON or XML formats, eliminating the need to parse HTML content manually.
+
+2.  **Real-Time Updates**: The API ensures that the latest data is always available, crucial for analyzing trends and deriving actionable insights.
+
+3.  Using the API aligns with computational best practices, ensuring that the analysis is both efficient and reliable.
+
+## Explanation
+
+### Data Collection
+
+```         
+url <- "http://api.worldbank.org/v2/country/all/indicator/SI.POV.DDAY"
+params <- list(
+  date = "1981:2022",  # Time range
+  format = "json",     # Data format
+  per_page = "1000"    # Maximum results per page
+)
+response <- GET(url, query = params)
+```
+
+**Explanation**:
+
+-   The code defines the API endpoint and parameters to fetch poverty data from 1981 to 2022.
+
+-   The `GET` function from the `httr` library retrieves the data.
+
+### Data Parsing and Cleaning
+
+```         
+data <- fromJSON(content(response, "text"))
+poverty_data <- data[[2]]
+poverty_cleaned <- poverty_data %>%
+  transmute(
+    country = country$value,  # Extract country names
+    year = as.numeric(date),  # Convert date to numeric
+    value = as.numeric(value) # Convert poverty rate to numeric
+  ) %>%
+  filter(!is.na(value))       # Remove rows with missing values
+```
+
+**Explanation**:
+
+-   The JSON response is parsed into an R object using `fromJSON`.
+
+-   The dataset is cleaned to include only non-missing values and renamed for clarity.
+
+### Visualizing Data
+
+```         
+ggplot(poverty_cleaned, aes(x = year, y = value, color = country)) +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Poverty Trends by Country", x = "Year", y = "Poverty Rate (%)")
+```
+
+**Explanation**:
+
+-   This visualization plots poverty rates over time for each country.
+
+-   `geom_line()` is used to display trends, and color differentiates countries.
+
+## Trends and Key Findings
+
+### Global Trends
+
+The data reveals significant global trends:
+
+-   **Decline in Poverty**: Many countries have seen a steady decline in poverty rates since the 1980s, reflecting economic growth and improved social programs.
+
+-   **Regional Disparities**: Sub-Saharan Africa continues to exhibit high poverty rates, whereas regions like East Asia and the Pacific have made substantial progress.
+
+### Findings
+
+1.  Countries such as China and India show rapid declines in poverty, underscoring the role of industrialization and globalization.
+
+2.  Despite progress, certain nations remain stagnant, emphasizing the need for targeted interventions in areas affected by conflict or poor governance.
+
+## Role of ChatGPT in This Work
+
+In this project, ChatGPT played a critical role in several aspects:
+
+1.  **Troubleshooting Code**: ChatGPT assisted in identifying and resolving bugs in my R code, such as issues with data wrangling and API integration. However, some bugs required additional debugging and testing, as ChatGPT's suggestions were not always immediately effective.
+
+2.  **Improving Code Quality**: By proofreading my code, ChatGPT helped reduce redundancy, streamline logic, and improve readability.
+
+3.  **Documentation Support**: ChatGPT provided valuable feedback on structuring and enhancing the clarity of this report and the README file.
+
+While ChatGPT significantly improved efficiency, its suggestions were occasionally incorrect or incomplete, requiring critical evaluation and manual corrections, for example, mistyping 'ui' as 'iu'. This iterative process emphasized the importance of combining AI-generated insights with human oversight to achieve high-quality outcomes.
